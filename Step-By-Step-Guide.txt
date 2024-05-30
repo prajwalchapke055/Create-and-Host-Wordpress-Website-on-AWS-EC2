@@ -1,0 +1,157 @@
+*** Step-by-Step Guide for Creating and Deploying a WordPress Website on AWS ***
+
+
+1.Create an AWS EC2 Instance 
+
+A)Log in to the AWS Management Console :
+    - Go to the AWS Management Console and log in.
+    
+B)Launch an EC2 Instance :
+    - Navigate to the EC2 Dashboard.
+    - Click on "Launch Instance".
+    
+C)Configure Instance Details :
+    - Name and Tags : Name your instance (e.g., My WordPress Server).
+    - Application and OS Images (Amazon Machine Image) : Select Ubuntu as the operating system (e.g., Ubuntu Server 22.04 LTS (HVM), SSD Volume Type - free tier eligible). 
+    - Instance Type : Choose t2.micro (eligible for the free tier).
+    - Key Pair : Create a new key pair, name it (e.g., WordPressKeyPair), and download the .pem file.
+    - Network Settings : Allow HTTP, HTTPS, and SSH traffic.
+    - Storage : Use the default storage settings (8 GB General Purpose SSD).
+    
+D)Launch the Instance :
+    - Click on "Launch Instance" and wait for the instance to be created.
+    
+
+2.Assign an Elastic IP Address
+
+A)Allocate an Elastic IP :
+    - Go to the EC2 Dashboard and select "Elastic IPs" from the left sidebar.
+    - Click on "Allocate Elastic IP address" and then "Allocate".
+    
+B)Associate the Elastic IP :
+    - Select the newly allocated Elastic IP and click on "Actions" > "Associate Elastic IP address".
+    - Choose your instance from the list and associate the Elastic IP.
+    
+    
+3.Connect to the EC2 Instance
+
+A)Install an SSH Client:
+    - If you are using Windows, download and install an SSH client like Mobaxterm or PuTTY.
+    - For Linux or macOS, use the built-in terminal.
+
+B)Connect via SSH :
+    - Open your SSH client and start a new session.
+    - Use the Elastic IP address and the username ubuntu.
+    - Provide the path to your .pem file for authentication.
+    - Ex : ssh -i WordPressKeyPair.pem ubuntu@<Elastic_IP>
+    
+    
+4. Install Apache, MySQL, and PHP
+
+A)Update the Package Index :
+    - Ex : sudo apt update
+
+B)Install Apache :
+    - Ex : sudo apt install apache2
+
+C)Install PHP and Required Modules :
+    - Ex : sudo apt install php libapache2-mod-php php-mysql
+    
+D)Install MySQL :
+    - Ex : sudo apt install mysql-server
+
+
+5.Configure MySQL
+
+A)Log in to MySQL :
+    - Ex : sudo mysql -u root -p
+    
+B)Create a Database and User :
+    - ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password by 'Testpassword@123';
+
+    - CREATE DATABASE wordpress_db;
+    
+    - CREATE USER 'wp_user'@'localhost' IDENTIFIED BY 'TestPassword@123';
+    - GRANT ALL PRIVILEGES ON wordpress_db.* TO 'wp_user'@'localhost';
+    - (Ctrl+D) - EXIT;
+    
+    
+6.Download and Configure WordPress
+
+A)Download WordPress:
+    - cd /tmp
+    - wget https://wordpress.org/wordpress-6.5.3.tar.gz
+    - unzip wordpress.zip ( tar -xvf  wordpress-6.5.3.tar.gz )
+    - sudo mv wordpress/  /var/www/html/
+    
+B)Set Permissions :
+    - sudo chown -R www-data:www-data /var/www/html/wordpress
+    - sudo chmod -R 755 /var/www/html/wordpress
+
+C)Configure WordPress :
+    - cd /var/www/html/wordpress
+    - sudo cp wp-config-sample.php wp-config.php
+    - sudo nano wp-config.php
+    
+D)Edit wp-config.php :
+    Update the database details as follows:
+    - define('DB_NAME', 'wordpress_db');
+    - define('DB_USER', 'wp_user');
+    - define('DB_PASSWORD', 'TestPassword@123');
+    - define('DB_HOST', 'localhost');
+    
+    
+7.Finalize Apache Configuration
+
+A)Edit Apache Configuration :
+    - sudo nano /etc/apache2/sites-available/000-default.conf
+    
+B)Update DocumentRoot and Directory :
+    - DocumentRoot /var/www/html/wordpress
+       <Directory /var/www/html/wordpress>
+                 AllowOverride All
+       </Directory>
+
+C)Enable Apache Rewrite Module and Restart Apache :
+    - sudo a2enmod rewrite
+    - sudo systemctl restart apache2
+    
+    
+8.Complete WordPress Installation
+
+A) Access WordPress Setup :
+    - Open a web browser and navigate to “ http://<Elastic_IP> “ 
+    - Follow the on-screen instructions to complete the WordPress setup.
+
+
+9.Assign a Domain Name
+
+A)Update DNS Settings :
+    - Go to your domain registrar and update the DNS settings to point to the Elastic IP of your EC2 instance.
+
+B)Edit Apache Configuration for Domain :
+    - sudo nano /etc/apache2/sites-available/000-default.conf
+
+C)Add ServerName and ServerAlias :
+    - ServerName yourdomain.com
+    - ServerAlias www.yourdomain.com
+    
+D)Restart Apache :
+    - sudo systemctl restart apache2
+    
+    
+10.Enable HTTPS with SSL Certificate
+
+A)Install Certbot :
+    - sudo apt update
+    - sudo apt install certbot python3-certbot-apache
+    
+B)Obtain and Install SSL Certificate :
+    - sudo certbot --apache -d yourdomain.com -d www.yourdomain.com
+    
+C)Verify HTTPS :
+    - Open a web browser and navigate to https://yourdomain.com to verify that your site is accessible over HTTPS.
+    
+    
+*** Conclusion ***
+- This step-by-step guide covers the entire process of creating, configuring, and deploying a WordPress website on AWS. Follow these steps carefully to set up your WordPress site, assign a domain name, and secure it with an SSL certificate.
